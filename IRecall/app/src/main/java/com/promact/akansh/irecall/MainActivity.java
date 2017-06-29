@@ -1,10 +1,10 @@
 package com.promact.akansh.irecall;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -32,26 +32,43 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //This code is for configuring the sign-in in order to request the user's name and email;
-        options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
-
-        //The next step is to build a GoogleApiClient
-        mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).addApi(Auth.GOOGLE_SIGN_IN_API, options).build();
-        signInButton = (com.google.android.gms.common.SignInButton) findViewById(R.id.loginWithGoogle);
-
-        signInButton.setOnClickListener(new View.OnClickListener()
+        if (SaveSharedPref.getToken(MainActivity.this).length()==0)
         {
-            @Override
-            public void onClick(View v)
+            //This code is for configuring the sign-in in order to request the user's name and email;
+            options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
+
+            //The next step is to build a GoogleApiClient
+            mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).addApi(Auth.GOOGLE_SIGN_IN_API, options).build();
+            signInButton = (com.google.android.gms.common.SignInButton) findViewById(R.id.loginWithGoogle);
+
+            signInButton.setOnClickListener(new View.OnClickListener()
             {
-                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-                startActivityForResult(signInIntent, RC_SIGN_IN);
-            }
-        });
+                @Override
+                public void onClick(View v)
+                {
+                    Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                }
+            });
+        }
+        else
+        {
+            Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
+            intent.putExtra("idToken", SaveSharedPref.getToken(getApplicationContext()));
+            intent.putExtra("name", SaveSharedPref.getUsername(getApplicationContext()));
+            intent.putExtra("email", SaveSharedPref.getEmail(getApplicationContext()));
+            intent.putExtra("photoUri", SaveSharedPref.getPhotoUri(getApplicationContext()));
+
+            Toast.makeText(getApplicationContext(), "sharedPreferences Successfully Saved", Toast.LENGTH_SHORT).show();
+            Log.i("Shared: ", "Shjared pref saved");
+
+            startActivity(intent);
+        }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_SIGN_IN)
@@ -61,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         }
     }
 
-    private void handleSignInResult(GoogleSignInResult result)
+    public void handleSignInResult(GoogleSignInResult result)
     {
         Log.d(TAG, "handleSignInResult" + result.isSuccess());
 
@@ -73,25 +90,27 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             email = account.getEmail();
             photoUri = account.getPhotoUrl();
 
-          //  AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+            //  AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
 
-            Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("idToken", idToken);
             intent.putExtra("name", name);
             intent.putExtra("email", email);
             intent.putExtra("photoUri", photoUri.toString());
+            SaveSharedPref.setPrefs(getApplicationContext(), idToken, name, email, photoUri.toString());
 
             startActivity(intent);
         }
 
         else
         {
+            Log.e("Error: ", result.getStatus().getStatusMessage());
             Toast.makeText(getApplicationContext(), "Login was unsuccessful", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult)
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult)
     {
         Log.e(TAG, "Connection Failed: " + connectionResult);
     }
