@@ -2,7 +2,6 @@ package com.promact.akansh.irecall;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +19,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 {
     private GoogleApiClient mGoogleApiClient;
     private GoogleSignInOptions options;
-    private static final int RC_SIGN_IN = 9001;
+    private static final int RC_SIGN_IN = 1;
     private String idToken, email, name;
     private Uri photoUri;
     private static final String TAG = "MainActivity";
@@ -35,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         if (SaveSharedPref.getToken(MainActivity.this).length()==0)
         {
             //This code is for configuring the sign-in in order to request the user's name and email;
-            options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
+            options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
 
             //The next step is to build a GoogleApiClient
             mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this, this).addApi(Auth.GOOGLE_SIGN_IN_API, options).build();
@@ -53,13 +52,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         }
         else
         {
+            String username = SaveSharedPref.getUsername(getApplicationContext());
+
             Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
             intent.putExtra("idToken", SaveSharedPref.getToken(getApplicationContext()));
             intent.putExtra("name", SaveSharedPref.getUsername(getApplicationContext()));
             intent.putExtra("email", SaveSharedPref.getEmail(getApplicationContext()));
             intent.putExtra("photoUri", SaveSharedPref.getPhotoUri(getApplicationContext()));
 
-            Toast.makeText(getApplicationContext(), "sharedPreferences Successfully Saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Logged in as: " + username, Toast.LENGTH_SHORT).show();
             Log.i("Shared: ", "Shjared pref saved");
 
             startActivity(intent);
@@ -90,8 +91,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             email = account.getEmail();
             photoUri = account.getPhotoUrl();
 
-            //  AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-
             Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("idToken", idToken);
             intent.putExtra("name", name);
@@ -104,13 +103,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         else
         {
-            Log.e("Error: ", result.getStatus().getStatusMessage());
+            //Log.e("Error: ", result.getStatus().getStatusMessage());
             Toast.makeText(getApplicationContext(), "Login was unsuccessful", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult)
+    public void onConnectionFailed(ConnectionResult connectionResult)
     {
         Log.e(TAG, "Connection Failed: " + connectionResult);
     }

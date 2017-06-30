@@ -3,4 +3,5 @@
     <color name="colorPrimary">#018c74</color>
     <color name="colorPrimaryDark">#016e5e</color>
     <color name="colorAccent">#3bd947</color>
+    <color name="loginScreen">#FFF66E44</color>
 </resources>
